@@ -1491,7 +1491,9 @@ func (sb *smartBlock) runIndexer(s *state.State, opts ...IndexOption) {
 	docInfo := sb.getDocInfo(s)
 	if err := sb.indexer.Index(docInfo, opts...); err != nil {
 		log.Errorf("index object %s error: %s", sb.Id(), err)
+		return
 	}
+	notifyFormulaIndexed(sb.SpaceID(), sb.Id(), docInfo.Details)
 }
 
 func removeInternalFlags(s *state.State) {

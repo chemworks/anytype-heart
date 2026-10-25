@@ -85,6 +85,7 @@ import (
 	"github.com/anyproto/anytype-heart/core/files/filesync"
 	"github.com/anyproto/anytype-heart/core/files/fileuploader"
 	"github.com/anyproto/anytype-heart/core/files/reconciler"
+	"github.com/anyproto/anytype-heart/core/formula/formulawatcher"
 	"github.com/anyproto/anytype-heart/core/gallery"
 	"github.com/anyproto/anytype-heart/core/history"
 	"github.com/anyproto/anytype-heart/core/identity"
@@ -257,6 +258,7 @@ func Bootstrap(a *app.App, components ...app.Component) {
 		Register(ftsearch.TantivyNew()).
 		Register(objectstore.New()).
 		Register(backlinks.New()).
+		Register(formulawatcher.New()).
 		// Services
 		Register(collection.New()).
 		Register(subscription.New()).
