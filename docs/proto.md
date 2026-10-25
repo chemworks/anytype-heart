@@ -39212,6 +39212,7 @@ RelationFormat describes how the underlying data is stored in the google.protobu
 | object | 100 | relation can has objectType to specify objectType |
 | relations | 101 | base64-encoded relation pb model |
 | map | 102 | relation that handle map of values |
+| formula | 200 | obj-notes fork: value computed from relationFormula, stored as a local detail |
 
 
 

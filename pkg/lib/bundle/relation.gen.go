@@ -9,7 +9,7 @@ import (
 	"github.com/anyproto/anytype-heart/pkg/lib/pb/model"
 )
 
-const RelationChecksum = "71001c404294aa631e6656584c2f9f1f73d99abc2fb15c7c4018ebf1dc81dcdb"
+const RelationChecksum = "d005d97f00091fcc6b5546c0778b28b9ae1862e6c674946a5c55309602e00bc4"
 const (
 	RelationKeyTag                                  domain.RelationKey = "tag"
 	RelationKeyCamera                               domain.RelationKey = "camera"
@@ -31,6 +31,10 @@ const (
 	RelationKeyTasks                                domain.RelationKey = "tasks"
 	RelationKeySnippet                              domain.RelationKey = "snippet"
 	RelationKeyRelationFormat                       domain.RelationKey = "relationFormat"
+	RelationKeyRelationFormula                      domain.RelationKey = "relationFormula"
+	RelationKeyRelationFormulaResultFormat          domain.RelationKey = "relationFormulaResultFormat"
+	RelationKeyFormulaErrors                        domain.RelationKey = "formulaErrors"
+	RelationKeyRelationFormulaError                 domain.RelationKey = "relationFormulaError"
 	RelationKeyRelationReadonlyValue                domain.RelationKey = "relationReadonlyValue"
 	RelationKeyIconImage                            domain.RelationKey = "iconImage"
 	RelationKeyIngredients                          domain.RelationKey = "ingredients"
@@ -1005,6 +1009,19 @@ var (
 			MaxCount:         1,
 			Name:             "Focal ratio",
 			ReadOnly:         false,
+			ReadOnlyRelation: true,
+			Scope:            model.Relation_type,
+		},
+		RelationKeyFormulaErrors: {
+
+			DataSource:       model.Relation_local,
+			Description:      "Formula properties of the object that could not be computed, one \"relationKey<TAB>reason\" entry each",
+			Format:           model.RelationFormat_longtext,
+			Hidden:           true,
+			Id:               "_brformulaErrors",
+			Key:              "formulaErrors",
+			Name:             "Formula errors",
+			ReadOnly:         true,
 			ReadOnlyRelation: true,
 			Scope:            model.Relation_type,
 		},
@@ -2026,6 +2043,48 @@ var (
 			ReadOnly:         true,
 			ReadOnlyRelation: true,
 			Revision:         1,
+			Scope:            model.Relation_type,
+		},
+		RelationKeyRelationFormula: {
+
+			DataSource:       model.Relation_details,
+			Description:      "Formula of a formula property, stored with relation keys",
+			Format:           model.RelationFormat_longtext,
+			Hidden:           true,
+			Id:               "_brrelationFormula",
+			Key:              "relationFormula",
+			MaxCount:         1,
+			Name:             "Formula",
+			ReadOnly:         false,
+			ReadOnlyRelation: true,
+			Scope:            model.Relation_type,
+		},
+		RelationKeyRelationFormulaError: {
+
+			DataSource:       model.Relation_details,
+			Description:      "Why the formula of a formula property does not compile, empty when it does",
+			Format:           model.RelationFormat_longtext,
+			Hidden:           true,
+			Id:               "_brrelationFormulaError",
+			Key:              "relationFormulaError",
+			MaxCount:         1,
+			Name:             "Formula error",
+			ReadOnly:         true,
+			ReadOnlyRelation: true,
+			Scope:            model.Relation_type,
+		},
+		RelationKeyRelationFormulaResultFormat: {
+
+			DataSource:       model.Relation_details,
+			Description:      "Relation format of the value a formula property produces",
+			Format:           model.RelationFormat_number,
+			Hidden:           true,
+			Id:               "_brrelationFormulaResultFormat",
+			Key:              "relationFormulaResultFormat",
+			MaxCount:         1,
+			Name:             "Formula result format",
+			ReadOnly:         true,
+			ReadOnlyRelation: true,
 			Scope:            model.Relation_type,
 		},
 		RelationKeyRelationKey: {

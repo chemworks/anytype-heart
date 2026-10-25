@@ -231,7 +231,12 @@ func (s *dsObjectStore) GetRelationFormatByKey(key domain.RelationKey) (model.Re
 	}
 
 	details := records[0].Details
-	return model.RelationFormat(details.GetInt64(bundle.RelationKeyRelationFormat)), nil
+	format = model.RelationFormat(details.GetInt64(bundle.RelationKeyRelationFormat))
+	if format == model.RelationFormat_formula {
+		// formulas are sorted and filtered as the format of their value
+		return model.RelationFormat(details.GetInt64(bundle.RelationKeyRelationFormulaResultFormat)), nil
+	}
+	return format, nil
 }
 
 // ListRelationOptions returns options for specific relation.
