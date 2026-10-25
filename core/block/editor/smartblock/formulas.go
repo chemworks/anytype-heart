@@ -39,6 +39,9 @@ func (sb *smartBlock) injectFormulaDetails(s *state.State) {
 		return
 	}
 	sb.injectFormulaValidation(s)
+	if formula.Paused(s.CombinedDetails()) {
+		return
+	}
 	var extraKeys []domain.RelationKey
 	for _, link := range s.PickRelationLinks() {
 		if link.Format == model.RelationFormat_formula {

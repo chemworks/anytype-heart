@@ -228,6 +228,13 @@ func (r *Result) ErrorList() []string {
 	return out
 }
 
+// Paused reports whether the formulas of an object keep their last values instead
+// of being recomputed. Archived objects are paused, so a finished project stops
+// costing recalculation and its totals stay as they were when it was archived.
+func Paused(details *domain.Details) bool {
+	return details.GetBool(bundle.RelationKeyIsArchived)
+}
+
 // Compute evaluates the formula properties that apply to an object: the ones
 // its type recommends plus extraKeys (relations added to the object itself).
 // details are the object's current details; related objects are read from store.

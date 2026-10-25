@@ -229,7 +229,7 @@ func (w *watcher) recompute(spaceId string, idx spaceindex.Store, id string) err
 	if err != nil {
 		return fmt.Errorf("get details: %w", err)
 	}
-	if details == nil || details.Len() == 0 {
+	if details == nil || details.Len() == 0 || formula.Paused(details) {
 		return nil
 	}
 	res, err := formula.Compute(idx, details, nil)

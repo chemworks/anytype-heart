@@ -253,4 +253,22 @@ func TestWatcher_Children(t *testing.T) {
 		assert.Equal(t, float64(0), pending("projectA"))
 		assert.Equal(t, float64(4), pending("projectB"))
 	})
+
+	t.Run("archived project keeps its last value", func(t *testing.T) {
+		// given
+		err := fx.store.SpaceIndex(spaceId).ModifyObjectDetails("projectB", func(d *domain.Details) (*domain.Details, bool, error) {
+			d.SetBool(bundle.RelationKeyIsArchived, true)
+			return d, true, nil
+		}, false)
+		require.NoError(t, err)
+		moveTo("projectA")
+
+		// when
+		err = fx.process(job{kind: objectChanged, spaceId: spaceId, id: "t1"})
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, float64(4), pending("projectA"))
+		assert.Equal(t, float64(4), pending("projectB"))
+	})
 }
