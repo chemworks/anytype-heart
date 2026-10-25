@@ -9,7 +9,7 @@ import (
 	"github.com/anyproto/anytype-heart/pkg/lib/pb/model"
 )
 
-const RelationChecksum = "71001c404294aa631e6656584c2f9f1f73d99abc2fb15c7c4018ebf1dc81dcdb"
+const RelationChecksum = "b451ecefae21f6fd4c820207ecc8f24084ae37fd8c430437d7ce1866d2328335"
 const (
 	RelationKeyTag                                  domain.RelationKey = "tag"
 	RelationKeyCamera                               domain.RelationKey = "camera"
@@ -31,6 +31,8 @@ const (
 	RelationKeyTasks                                domain.RelationKey = "tasks"
 	RelationKeySnippet                              domain.RelationKey = "snippet"
 	RelationKeyRelationFormat                       domain.RelationKey = "relationFormat"
+	RelationKeyRelationFormula                      domain.RelationKey = "relationFormula"
+	RelationKeyRelationFormulaResultFormat          domain.RelationKey = "relationFormulaResultFormat"
 	RelationKeyRelationReadonlyValue                domain.RelationKey = "relationReadonlyValue"
 	RelationKeyIconImage                            domain.RelationKey = "iconImage"
 	RelationKeyIngredients                          domain.RelationKey = "ingredients"
@@ -2026,6 +2028,34 @@ var (
 			ReadOnly:         true,
 			ReadOnlyRelation: true,
 			Revision:         1,
+			Scope:            model.Relation_type,
+		},
+		RelationKeyRelationFormula: {
+
+			DataSource:       model.Relation_details,
+			Description:      "Formula of a formula property, stored with relation keys",
+			Format:           model.RelationFormat_longtext,
+			Hidden:           true,
+			Id:               "_brrelationFormula",
+			Key:              "relationFormula",
+			MaxCount:         1,
+			Name:             "Formula",
+			ReadOnly:         false,
+			ReadOnlyRelation: true,
+			Scope:            model.Relation_type,
+		},
+		RelationKeyRelationFormulaResultFormat: {
+
+			DataSource:       model.Relation_details,
+			Description:      "Relation format of the value a formula property produces",
+			Format:           model.RelationFormat_number,
+			Hidden:           true,
+			Id:               "_brrelationFormulaResultFormat",
+			Key:              "relationFormulaResultFormat",
+			MaxCount:         1,
+			Name:             "Formula result format",
+			ReadOnly:         true,
+			ReadOnlyRelation: true,
 			Scope:            model.Relation_type,
 		},
 		RelationKeyRelationKey: {

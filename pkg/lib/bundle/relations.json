@@ -208,6 +208,26 @@
     "source": "details"
   },
   {
+    "description": "Formula of a formula property, stored with relation keys",
+    "format": "longtext",
+    "hidden": true,
+    "key": "relationFormula",
+    "maxCount": 1,
+    "name": "Formula",
+    "readonly": false,
+    "source": "details"
+  },
+  {
+    "description": "Relation format of the value a formula property produces",
+    "format": "number",
+    "hidden": true,
+    "key": "relationFormulaResultFormat",
+    "maxCount": 1,
+    "name": "Formula result format",
+    "readonly": true,
+    "source": "details"
+  },
+  {
     "description": "Indicates whether the relation value is readonly",
     "format": "checkbox",
     "hidden": true,
