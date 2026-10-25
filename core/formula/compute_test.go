@@ -123,6 +123,36 @@ func TestCompute(t *testing.T) {
 		assert.Equal(t, float64(70), res.Values["cost"].Float64())
 	})
 
+	t.Run("project progress from done tasks", func(t *testing.T) {
+		// given
+		fx := newComputeFixture(t)
+		fx.store.AddObjects(t, testSpaceId, []objectstore.TestObject{
+			relationObject("progress", "Avance", model.RelationFormat_formula,
+				`len(prop("tasks")) == 0 ? 0 : round(count(rel("tasks", "state"), # == "Hecho") / len(prop("tasks")) * 100)`),
+			typeObject("type-project", "tasks", "progress"),
+		})
+		Invalidate(testSpaceId)
+		withTasks := domain.NewDetailsFromMap(map[domain.RelationKey]domain.Value{
+			bundle.RelationKeyId:   domain.String("project1"),
+			bundle.RelationKeyType: domain.String("type-project"),
+			"tasks":                domain.StringList([]string{"task1", "task2"}),
+		})
+		empty := domain.NewDetailsFromMap(map[domain.RelationKey]domain.Value{
+			bundle.RelationKeyId:   domain.String("project2"),
+			bundle.RelationKeyType: domain.String("type-project"),
+		})
+
+		// when
+		got := fx.compute(t, withTasks)
+		gotEmpty := fx.compute(t, empty)
+
+		// then
+		require.Empty(t, got.Errors)
+		assert.Equal(t, float64(50), got.Values["progress"].Float64())
+		require.Empty(t, gotEmpty.Errors)
+		assert.Equal(t, float64(0), gotEmpty.Values["progress"].Float64())
+	})
+
 	t.Run("object of a type without formulas", func(t *testing.T) {
 		// given
 		fx := newComputeFixture(t)

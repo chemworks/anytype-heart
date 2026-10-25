@@ -85,7 +85,7 @@ func Compile(text string, schema *Schema) (*Formula, error) {
 	if err != nil {
 		return nil, toError(err)
 	}
-	format, err := resultFormat(program.Node().Type())
+	format, err := nodeFormat(program.Node())
 	if err != nil {
 		return nil, err
 	}
@@ -103,6 +103,26 @@ func toError(err error) error {
 var (
 	timeType = reflect.TypeOf(time.Time{})
 )
+
+// nodeFormat is the format of the value of node. A condition whose branches
+// have different Go types of the same format, like 0 and round(x), is typed as
+// unknown by expr, so its branches decide.
+func nodeFormat(node ast.Node) (model.RelationFormat, error) {
+	format, err := resultFormat(node.Type())
+	if err == nil {
+		return format, nil
+	}
+	cond, ok := node.(*ast.ConditionalNode)
+	if !ok {
+		return 0, err
+	}
+	yes, yesErr := nodeFormat(cond.Exp1)
+	no, noErr := nodeFormat(cond.Exp2)
+	if yesErr != nil || noErr != nil || yes != no {
+		return 0, err
+	}
+	return yes, nil
+}
 
 func resultFormat(t reflect.Type) (model.RelationFormat, error) {
 	if t == nil {
