@@ -125,6 +125,7 @@ require (
 )
 
 require (
+	github.com/expr-lang/expr v1.17.8
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2
 	github.com/swaggo/swag/v2 v2.0.0-rc4
 )
