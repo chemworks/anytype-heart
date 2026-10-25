@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sync"
 	"time"
 
@@ -265,6 +266,9 @@ func (w *watcher) recompute(spaceId string, idx spaceindex.Store, id string) err
 }
 
 func upToDate(details *domain.Details, res *formula.Result) bool {
+	if !slices.Equal(details.GetStringList(bundle.RelationKeyFormulaErrors), res.ErrorList()) {
+		return false
+	}
 	for _, key := range res.Keys {
 		want, ok := res.Values[key]
 		got := details.Get(key)
@@ -288,6 +292,11 @@ func apply(details *domain.Details, res *formula.Result) {
 			continue
 		}
 		details.Delete(key)
+	}
+	if errs := res.ErrorList(); len(errs) > 0 {
+		details.SetStringList(bundle.RelationKeyFormulaErrors, errs)
+	} else {
+		details.Delete(bundle.RelationKeyFormulaErrors)
 	}
 }
 

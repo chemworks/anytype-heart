@@ -176,6 +176,8 @@ func TestCompute(t *testing.T) {
 		assert.Equal(t, float64(20), res.Values["cost"].Float64())
 		require.Contains(t, res.Errors, domain.RelationKey("broken"))
 		assert.Contains(t, res.Errors["broken"].Error(), `property "nope" does not exist`)
+		want := []string{"broken\t" + res.Errors["broken"].Error()}
+		assert.Equal(t, want, res.ErrorList())
 	})
 
 	t.Run("formulas in a loop are reported", func(t *testing.T) {

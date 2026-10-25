@@ -9,7 +9,7 @@ import (
 	"github.com/anyproto/anytype-heart/pkg/lib/pb/model"
 )
 
-const RelationChecksum = "a3c16a693db0a9780cf9b643788fa096cce7170f32aa08af04e5df6431a451f7"
+const RelationChecksum = "d005d97f00091fcc6b5546c0778b28b9ae1862e6c674946a5c55309602e00bc4"
 const (
 	RelationKeyTag                                  domain.RelationKey = "tag"
 	RelationKeyCamera                               domain.RelationKey = "camera"
@@ -33,6 +33,7 @@ const (
 	RelationKeyRelationFormat                       domain.RelationKey = "relationFormat"
 	RelationKeyRelationFormula                      domain.RelationKey = "relationFormula"
 	RelationKeyRelationFormulaResultFormat          domain.RelationKey = "relationFormulaResultFormat"
+	RelationKeyFormulaErrors                        domain.RelationKey = "formulaErrors"
 	RelationKeyRelationFormulaError                 domain.RelationKey = "relationFormulaError"
 	RelationKeyRelationReadonlyValue                domain.RelationKey = "relationReadonlyValue"
 	RelationKeyIconImage                            domain.RelationKey = "iconImage"
@@ -1008,6 +1009,19 @@ var (
 			MaxCount:         1,
 			Name:             "Focal ratio",
 			ReadOnly:         false,
+			ReadOnlyRelation: true,
+			Scope:            model.Relation_type,
+		},
+		RelationKeyFormulaErrors: {
+
+			DataSource:       model.Relation_local,
+			Description:      "Formula properties of the object that could not be computed, one \"relationKey<TAB>reason\" entry each",
+			Format:           model.RelationFormat_longtext,
+			Hidden:           true,
+			Id:               "_brformulaErrors",
+			Key:              "formulaErrors",
+			Name:             "Formula errors",
+			ReadOnly:         true,
 			ReadOnlyRelation: true,
 			Scope:            model.Relation_type,
 		},

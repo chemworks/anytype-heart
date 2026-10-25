@@ -228,6 +228,16 @@
     "source": "details"
   },
   {
+    "description": "Formula properties of the object that could not be computed, one \"relationKey<TAB>reason\" entry each",
+    "format": "longtext",
+    "hidden": true,
+    "key": "formulaErrors",
+    "maxCount": 0,
+    "name": "Formula errors",
+    "readonly": true,
+    "source": "local"
+  },
+  {
     "description": "Why the formula of a formula property does not compile, empty when it does",
     "format": "longtext",
     "hidden": true,

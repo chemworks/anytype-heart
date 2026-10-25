@@ -2,6 +2,7 @@ package formula
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -211,6 +212,17 @@ type Result struct {
 	Keys   []domain.RelationKey
 	Values map[domain.RelationKey]domain.Value
 	Errors map[domain.RelationKey]error
+}
+
+// ErrorList encodes the formula errors of an object for clients: one
+// "relationKey<TAB>reason" entry per formula that has no value, sorted by key.
+func (r *Result) ErrorList() []string {
+	out := make([]string, 0, len(r.Errors))
+	for key, err := range r.Errors {
+		out = append(out, string(key)+"\t"+err.Error())
+	}
+	sort.Strings(out)
+	return out
 }
 
 // Compute evaluates the formula properties that apply to an object: the ones

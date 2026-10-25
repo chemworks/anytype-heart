@@ -222,3 +222,44 @@ func TestGetRelationByKey_LiveRowWinsOverRemoved(t *testing.T) {
 		})
 	}
 }
+
+func TestGetRelationFormatByKey(t *testing.T) {
+	newRelation := func(key string, format, resultFormat model.RelationFormat) TestObject {
+		obj := TestObject{
+			bundle.RelationKeyId:             domain.String("rel-" + key),
+			bundle.RelationKeyRelationKey:    domain.String(key),
+			bundle.RelationKeyRelationFormat: domain.Int64(int64(format)),
+			bundle.RelationKeyResolvedLayout: domain.Int64(int64(model.ObjectType_relation)),
+		}
+		if format == model.RelationFormat_formula {
+			obj[bundle.RelationKeyRelationFormulaResultFormat] = domain.Int64(int64(resultFormat))
+		}
+		return obj
+	}
+
+	t.Run("regular relation", func(t *testing.T) {
+		// given
+		s := NewStoreFixture(t)
+		s.AddObjects(t, []TestObject{newRelation("hours", model.RelationFormat_number, 0)})
+
+		// when
+		got, err := s.GetRelationFormatByKey("hours")
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, model.RelationFormat_number, got)
+	})
+
+	t.Run("formula relation is sorted and filtered as its result", func(t *testing.T) {
+		// given
+		s := NewStoreFixture(t)
+		s.AddObjects(t, []TestObject{newRelation("cost", model.RelationFormat_formula, model.RelationFormat_number)})
+
+		// when
+		got, err := s.GetRelationFormatByKey("cost")
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, model.RelationFormat_number, got)
+	})
+}

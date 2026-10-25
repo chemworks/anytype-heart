@@ -50,6 +50,11 @@ func (sb *smartBlock) injectFormulaDetails(s *state.State) {
 		log.With("objectID", sb.Id()).Errorf("compute formulas: %v", err)
 		return
 	}
+	if errs := res.ErrorList(); len(errs) > 0 {
+		s.SetLocalDetail(bundle.RelationKeyFormulaErrors, domain.StringList(errs))
+	} else {
+		s.RemoveLocalDetail(bundle.RelationKeyFormulaErrors)
+	}
 	for _, key := range res.Keys {
 		if v, ok := res.Values[key]; ok {
 			s.SetLocalDetail(key, v)
