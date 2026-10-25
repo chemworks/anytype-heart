@@ -153,6 +153,37 @@ func TestCompute(t *testing.T) {
 		assert.Equal(t, float64(0), gotEmpty.Values["progress"].Float64())
 	})
 
+	t.Run("project reads the tasks that point to it", func(t *testing.T) {
+		// given
+		fx := newComputeFixture(t)
+		fx.store.AddObjects(t, testSpaceId, []objectstore.TestObject{
+			relationObject("project", "Proyecto", model.RelationFormat_object, ""),
+			relationObject("pending", "Pendientes", model.RelationFormat_formula, `sum(children("project", "hours"))`),
+			typeObject("type-project", "tasks", "pending"),
+			{bundle.RelationKeyId: domain.String("t1"), "project": domain.StringList([]string{"projectA"}), "hours": domain.Float64(2)},
+			{bundle.RelationKeyId: domain.String("t2"), "project": domain.StringList([]string{"projectA"}), "hours": domain.Float64(5)},
+			{bundle.RelationKeyId: domain.String("t3"), "project": domain.StringList([]string{"projectB"}), "hours": domain.Float64(100)},
+			{
+				bundle.RelationKeyId:         domain.String("t4"),
+				"project":                    domain.StringList([]string{"projectA"}),
+				"hours":                      domain.Float64(1000),
+				bundle.RelationKeyIsArchived: domain.Bool(true),
+			},
+		})
+		Invalidate(testSpaceId)
+		project := domain.NewDetailsFromMap(map[domain.RelationKey]domain.Value{
+			bundle.RelationKeyId:   domain.String("projectA"),
+			bundle.RelationKeyType: domain.String("type-project"),
+		})
+
+		// when
+		got := fx.compute(t, project)
+
+		// then
+		require.Empty(t, got.Errors)
+		assert.Equal(t, float64(7), got.Values["pending"].Float64(), "archived tasks and other projects' tasks are left out")
+	})
+
 	t.Run("object of a type without formulas", func(t *testing.T) {
 		// given
 		fx := newComputeFixture(t)

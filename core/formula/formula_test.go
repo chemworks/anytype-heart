@@ -48,6 +48,10 @@ func (s fakeSource) Value(key domain.RelationKey) any {
 	return s.values[key]
 }
 
+func (s fakeSource) Children(rel, key domain.RelationKey) []any {
+	return s.Related(rel, key)
+}
+
 func (s fakeSource) Related(rel, key domain.RelationKey) []any {
 	var out []any
 	for _, obj := range s.related[rel] {
@@ -341,6 +345,19 @@ func TestNames(t *testing.T) {
 		assert.Equal(t, display, ToDisplay(stored, schema))
 	})
 
+	t.Run("children keeps both names", func(t *testing.T) {
+		// given
+		display := `sum(children("Tareas", "Horas"))`
+
+		// when
+		stored, err := ToStorage(display, schema)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, `sum(children("tasks", "hours"))`, stored)
+		assert.Equal(t, display, ToDisplay(stored, schema))
+	})
+
 	t.Run("renamed property keeps working", func(t *testing.T) {
 		// given
 		stored, err := ToStorage(`prop("Horas") * 2`, schema)
@@ -427,5 +444,17 @@ func TestDeps(t *testing.T) {
 
 	// then
 	want := []Dep{{Rel: keyTasks, Key: keyHours}, {Key: keyPrice}}
+	assert.ElementsMatch(t, want, got)
+}
+
+func TestDepsChildren(t *testing.T) {
+	// given
+	f := compileDisplay(t, `sum(children("Tareas", "Horas")) + sum(rel("Tareas", "Horas"))`)
+
+	// when
+	got := f.Deps()
+
+	// then
+	want := []Dep{{Rel: keyTasks, Key: keyHours, Reverse: true}, {Rel: keyTasks, Key: keyHours}}
 	assert.ElementsMatch(t, want, got)
 }

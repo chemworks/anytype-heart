@@ -65,6 +65,9 @@ type watcher struct {
 
 	lock    sync.Mutex
 	pending map[job]struct{}
+	// parents keeps, per object, the objects it linked to through relations read
+	// by children() formulas, so that a parent it no longer links to is updated too
+	parents map[job][]string
 	wakeCh  chan struct{}
 
 	ctx       context.Context
@@ -85,6 +88,7 @@ func (w *watcher) Init(a *app.App) error {
 	w.spaceService = app.MustComponent[space.Service](a)
 	w.aggregationInterval = defaultAggregationInterval
 	w.pending = map[job]struct{}{}
+	w.parents = map[job][]string{}
 	w.wakeCh = make(chan struct{}, 1)
 	return nil
 }
@@ -187,6 +191,11 @@ func (w *watcher) process(j job) error {
 		if err != nil {
 			return fmt.Errorf("get inbound links: %w", err)
 		}
+		parents, err := w.parentsOf(idx, j)
+		if err != nil {
+			return fmt.Errorf("get parents: %w", err)
+		}
+		targets = append(targets, parents...)
 	case relationChanged:
 		targets, err = objectsOfTypesUsing(idx, j.id)
 		if err != nil {
@@ -199,10 +208,12 @@ func (w *watcher) process(j job) error {
 		}
 	}
 
+	done := make(map[string]bool, len(targets))
 	for _, id := range targets {
-		if id == j.id {
+		if id == j.id || done[id] {
 			continue
 		}
+		done[id] = true
 		if err := w.recompute(j.spaceId, idx, id); err != nil {
 			log.Warn("recompute formulas of object", zap.String("objectId", id), zap.Error(err))
 		}
@@ -263,6 +274,35 @@ func (w *watcher) recompute(spaceId string, idx spaceindex.Store, id string) err
 		return fmt.Errorf("refresh open object: %w", err)
 	}
 	return nil
+}
+
+// parentsOf returns the objects that read the changed object through children():
+// the ones it links to now and the ones it linked to when it last changed.
+func (w *watcher) parentsOf(idx spaceindex.Store, j job) ([]string, error) {
+	rels, err := formula.ParentRelations(idx)
+	if err != nil {
+		return nil, fmt.Errorf("list parent relations: %w", err)
+	}
+	if len(rels) == 0 {
+		return nil, nil
+	}
+	details, err := idx.GetDetails(j.id)
+	if err != nil {
+		return nil, fmt.Errorf("get details: %w", err)
+	}
+	var current []string
+	for _, rel := range rels {
+		current = append(current, details.GetStringList(rel)...)
+	}
+	w.lock.Lock()
+	previous := w.parents[j]
+	if len(current) > 0 {
+		w.parents[j] = current
+	} else {
+		delete(w.parents, j)
+	}
+	w.lock.Unlock()
+	return append(current, previous...), nil
 }
 
 func upToDate(details *domain.Details, res *formula.Result) bool {

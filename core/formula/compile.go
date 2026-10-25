@@ -17,11 +17,13 @@ import (
 	"github.com/anyproto/anytype-heart/pkg/lib/pb/model"
 )
 
-// Dep is one value a formula reads: a property of the object itself (Rel is empty)
-// or a property of the objects linked through the Rel relation.
+// Dep is one value a formula reads: a property of the object itself (Rel is empty),
+// a property of the objects linked through the Rel relation, or, when Reverse is
+// set, a property of the objects whose Rel relation links to the object.
 type Dep struct {
-	Rel domain.RelationKey
-	Key domain.RelationKey
+	Rel     domain.RelationKey
+	Key     domain.RelationKey
+	Reverse bool
 }
 
 // Formula is a compiled, type-checked formula.
@@ -181,7 +183,9 @@ func (p *refPatcher) Visit(node *ast.Node) {
 	case "prop":
 		p.patchProp(node, call)
 	case "rel":
-		p.patchRel(node, call)
+		p.patchRel(node, call, false)
+	case "children":
+		p.patchRel(node, call, true)
 	}
 }
 
@@ -203,8 +207,12 @@ func (p *refPatcher) patchProp(node *ast.Node, call *ast.CallNode) {
 	p.replace(node, call, Dep{Key: prop.Key}, zero)
 }
 
-func (p *refPatcher) patchRel(node *ast.Node, call *ast.CallNode) {
-	args, ok := p.stringArgs(call, 2, `rel("Relation", "Property")`)
+func (p *refPatcher) patchRel(node *ast.Node, call *ast.CallNode, reverse bool) {
+	usage := `rel("Relation", "Property")`
+	if reverse {
+		usage = `children("Relation", "Property")`
+	}
+	args, ok := p.stringArgs(call, 2, usage)
 	if !ok {
 		return
 	}
@@ -227,7 +235,7 @@ func (p *refPatcher) patchRel(node *ast.Node, call *ast.CallNode) {
 		p.fail(call, fmt.Sprintf("property %q cannot be used in formulas", prop.Name))
 		return
 	}
-	p.replace(node, call, Dep{Rel: rel.Key, Key: prop.Key}, zero)
+	p.replace(node, call, Dep{Rel: rel.Key, Key: prop.Key, Reverse: reverse}, zero)
 }
 
 func (p *refPatcher) stringArgs(call *ast.CallNode, n int, usage string) ([]string, bool) {
@@ -284,6 +292,9 @@ func position(text string, offset int) (line, col int) {
 func identifier(dep Dep) string {
 	if dep.Rel == "" {
 		return "p\x00" + string(dep.Key)
+	}
+	if dep.Reverse {
+		return "c\x00" + string(dep.Rel) + "\x00" + string(dep.Key)
 	}
 	return "r\x00" + string(dep.Rel) + "\x00" + string(dep.Key)
 }

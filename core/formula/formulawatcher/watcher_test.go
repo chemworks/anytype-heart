@@ -42,6 +42,7 @@ func newFixture(t *testing.T) *fixture {
 		spaceService:        spaceService,
 		aggregationInterval: time.Millisecond,
 		pending:             map[job]struct{}{},
+		parents:             map[job][]string{},
 		wakeCh:              make(chan struct{}, 1),
 	}
 	w.ctx, w.cancelCtx = context.WithCancel(context.Background())
@@ -196,5 +197,60 @@ func TestWatcher_OnIndexed(t *testing.T) {
 
 		// then
 		assert.Contains(t, fx.pending, job{kind: objectChanged, spaceId: spaceId, id: "task1"})
+	})
+}
+
+func TestWatcher_Children(t *testing.T) {
+	// given
+	fx := newFixture(t)
+	fx.store.AddObjects(t, spaceId, []objectstore.TestObject{
+		relation("project", model.RelationFormat_object, ""),
+		relation("pending", model.RelationFormat_formula, `sum(children("project", "hours"))`),
+		{
+			bundle.RelationKeyId:                   domain.String("type-project"),
+			bundle.RelationKeyResolvedLayout:       domain.Int64(int64(model.ObjectType_objectType)),
+			bundle.RelationKeyRecommendedRelations: domain.StringList([]string{"rel-pending"}),
+		},
+		{bundle.RelationKeyId: domain.String("projectA"), bundle.RelationKeyType: domain.String("type-project")},
+		{bundle.RelationKeyId: domain.String("projectB"), bundle.RelationKeyType: domain.String("type-project")},
+		{bundle.RelationKeyId: domain.String("t1"), "project": domain.StringList([]string{"projectA"}), "hours": domain.Float64(4)},
+	})
+	formula.Invalidate(spaceId)
+	fx.space.EXPECT().DoLockedIfNotExists(mock.Anything, mock.Anything).RunAndReturn(func(id string, f func() error) error {
+		return f()
+	})
+	pending := func(id string) float64 {
+		d, err := fx.store.GetDetails(spaceId, id)
+		require.NoError(t, err)
+		return d.GetFloat64("pending")
+	}
+	moveTo := func(projectId string) {
+		err := fx.store.SpaceIndex(spaceId).ModifyObjectDetails("t1", func(d *domain.Details) (*domain.Details, bool, error) {
+			d.SetStringList("project", []string{projectId})
+			return d, true, nil
+		}, false)
+		require.NoError(t, err)
+	}
+
+	t.Run("task change updates its project", func(t *testing.T) {
+		// when
+		err := fx.process(job{kind: objectChanged, spaceId: spaceId, id: "t1"})
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, float64(4), pending("projectA"))
+	})
+
+	t.Run("moved task updates the old and the new project", func(t *testing.T) {
+		// given
+		moveTo("projectB")
+
+		// when
+		err := fx.process(job{kind: objectChanged, spaceId: spaceId, id: "t1"})
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, float64(0), pending("projectA"))
+		assert.Equal(t, float64(4), pending("projectB"))
 	})
 }

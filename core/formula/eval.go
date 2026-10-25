@@ -19,6 +19,8 @@ type Source interface {
 	Value(key domain.RelationKey) any
 	// Related returns a property of every object linked through rel, in link order.
 	Related(rel, key domain.RelationKey) []any
+	// Children returns a property of every object whose rel relation links to the object.
+	Children(rel, key domain.RelationKey) []any
 }
 
 // Evaluate runs the formula for one object and returns its value as a detail value.
@@ -31,7 +33,11 @@ func (f *Formula) Evaluate(src Source) (domain.Value, error) {
 			env[name] = valueOrZero(src.Value(dep.Key), zero)
 			continue
 		}
-		list, err := toList(src.Related(dep.Rel, dep.Key), zero)
+		values := src.Related
+		if dep.Reverse {
+			values = src.Children
+		}
+		list, err := toList(values(dep.Rel, dep.Key), zero)
 		if err != nil {
 			return domain.Value{}, fmt.Errorf("read related %s.%s: %w", dep.Rel, dep.Key, err)
 		}

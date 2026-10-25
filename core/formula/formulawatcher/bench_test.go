@@ -44,6 +44,7 @@ func newBenchFixture(tb testing.TB, projects, tasksPerProject int) *benchFixture
 		spaceService:        spaceService,
 		aggregationInterval: time.Millisecond,
 		pending:             map[job]struct{}{},
+		parents:             map[job][]string{},
 		wakeCh:              make(chan struct{}, 1),
 	}
 	w.ctx, w.cancelCtx = context.WithCancel(context.Background())
@@ -173,5 +174,45 @@ func BenchmarkCompileSpace(b *testing.B) {
 		formula.Invalidate(spaceId)
 		_, err := formula.HasFormulas(idx)
 		require.NoError(b, err)
+	}
+}
+
+// BenchmarkComputeChildren: one project summing the tasks that point to it,
+// read through children() instead of a list on the project.
+func BenchmarkComputeChildren(b *testing.B) {
+	for _, tasks := range []int{20, 1000} {
+		b.Run(fmt.Sprintf("tasks=%d", tasks), func(b *testing.B) {
+			fx := newBenchFixture(b, 1, tasks)
+			projectId := fx.projects[0]
+			objects := []objectstore.TestObject{
+				relation("project", model.RelationFormat_object, ""),
+				relation("pending", model.RelationFormat_formula, `sum(children("project", "hours"))`),
+				{
+					bundle.RelationKeyId:                   domain.String("type-project"),
+					bundle.RelationKeyResolvedLayout:       domain.Int64(int64(model.ObjectType_objectType)),
+					bundle.RelationKeyRecommendedRelations: domain.StringList([]string{"rel-pending"}),
+				},
+			}
+			for _, taskId := range fx.tasks[0] {
+				objects = append(objects, objectstore.TestObject{
+					bundle.RelationKeyId:   domain.String(taskId),
+					bundle.RelationKeyType: domain.String("type-task"),
+					"hours":                domain.Float64(1),
+					"project":              domain.StringList([]string{projectId}),
+				})
+			}
+			fx.store.AddObjects(b, spaceId, objects)
+			formula.Invalidate(spaceId)
+			idx := fx.store.SpaceIndex(spaceId)
+			details, err := idx.GetDetails(projectId)
+			require.NoError(b, err)
+			res, err := formula.Compute(idx, details, nil)
+			require.NoError(b, err)
+			require.Equal(b, float64(tasks), res.Values["pending"].Float64())
+			for b.Loop() {
+				_, err := formula.Compute(idx, details, nil)
+				require.NoError(b, err)
+			}
+		})
 	}
 }

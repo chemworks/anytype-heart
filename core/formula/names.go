@@ -12,6 +12,8 @@ import (
 var (
 	propRef = regexp.MustCompile(`prop\(\s*"([^"]*)"\s*\)`)
 	relRef  = regexp.MustCompile(`rel\(\s*"([^"]*)"\s*,\s*"([^"]*)"\s*\)`)
+	// childrenRef must not match the rel( inside other names, so it is anchored on a word boundary
+	childrenRef = regexp.MustCompile(`\bchildren\(\s*"([^"]*)"\s*,\s*"([^"]*)"\s*\)`)
 )
 
 // ToStorage rewrites property names to relation keys, which is the form formulas
@@ -53,6 +55,10 @@ func rewrite(text string, mapName func(string) (string, error)) (string, error) 
 	text = relRef.ReplaceAllStringFunc(text, func(m string) string {
 		sub := relRef.FindStringSubmatch(m)
 		return fmt.Sprintf("rel(%q, %q)", mapped(sub[1]), mapped(sub[2]))
+	})
+	text = childrenRef.ReplaceAllStringFunc(text, func(m string) string {
+		sub := childrenRef.FindStringSubmatch(m)
+		return fmt.Sprintf("children(%q, %q)", mapped(sub[1]), mapped(sub[2]))
 	})
 	text = propRef.ReplaceAllStringFunc(text, func(m string) string {
 		sub := propRef.FindStringSubmatch(m)

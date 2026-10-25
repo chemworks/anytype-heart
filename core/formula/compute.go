@@ -170,6 +170,9 @@ func referencedKeys(text string) []domain.RelationKey {
 	for _, m := range relRef.FindAllStringSubmatch(text, -1) {
 		keys = append(keys, domain.RelationKey(m[1]), domain.RelationKey(m[2]))
 	}
+	for _, m := range childrenRef.FindAllStringSubmatch(text, -1) {
+		keys = append(keys, domain.RelationKey(m[1]), domain.RelationKey(m[2]))
+	}
 	return keys
 }
 
@@ -358,6 +361,57 @@ func (s *detailsSource) Related(rel, key domain.RelationKey) []any {
 		out = append(out, s.convert(key, d.Get(key)))
 	}
 	return out
+}
+
+func (s *detailsSource) Children(rel, key domain.RelationKey) []any {
+	id := s.details.GetString(bundle.RelationKeyId)
+	if id == "" {
+		return nil
+	}
+	records, err := s.store.Query(database.Query{
+		Filters: []database.FilterRequest{
+			{
+				RelationKey: rel,
+				Condition:   model.BlockContentDataviewFilter_In,
+				Value:       domain.StringList([]string{id}),
+			},
+			{
+				RelationKey: bundle.RelationKeyIsArchived,
+				Condition:   model.BlockContentDataviewFilter_NotEqual,
+				Value:       domain.Bool(true),
+			},
+		},
+		Sorts: []database.SortRequest{{RelationKey: bundle.RelationKeyCreatedDate, Type: model.BlockContentDataviewSort_Asc}},
+	})
+	if err != nil {
+		return nil
+	}
+	out := make([]any, 0, len(records))
+	for _, rec := range records {
+		out = append(out, s.convert(key, rec.Details.Get(key)))
+	}
+	return out
+}
+
+// ParentRelations returns the relations that children() formulas of the space
+// read through: when an object changes, the objects its values of these
+// relations link to need their formulas recomputed.
+func ParentRelations(store Store) ([]domain.RelationKey, error) {
+	sf, err := loadSpace(store)
+	if err != nil {
+		return nil, err
+	}
+	seen := map[domain.RelationKey]bool{}
+	var out []domain.RelationKey
+	for _, f := range sf.formulas {
+		for _, d := range f.deps {
+			if d.Reverse && !seen[d.Rel] {
+				seen[d.Rel] = true
+				out = append(out, d.Rel)
+			}
+		}
+	}
+	return out, nil
 }
 
 // convert turns a detail value into the Go value formulas see (see Source).
