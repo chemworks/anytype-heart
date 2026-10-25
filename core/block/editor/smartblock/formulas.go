@@ -6,6 +6,8 @@ import (
 	"github.com/anyproto/anytype-heart/core/block/editor/state"
 	"github.com/anyproto/anytype-heart/core/domain"
 	"github.com/anyproto/anytype-heart/core/formula"
+	"github.com/anyproto/anytype-heart/pkg/lib/bundle"
+	"github.com/anyproto/anytype-heart/pkg/lib/core/smartblock"
 	"github.com/anyproto/anytype-heart/pkg/lib/pb/model"
 )
 
@@ -36,6 +38,7 @@ func (sb *smartBlock) injectFormulaDetails(s *state.State) {
 	if sb.spaceIndex == nil {
 		return
 	}
+	sb.injectFormulaValidation(s)
 	var extraKeys []domain.RelationKey
 	for _, link := range s.PickRelationLinks() {
 		if link.Format == model.RelationFormat_formula {
@@ -57,4 +60,26 @@ func (sb *smartBlock) injectFormulaDetails(s *state.State) {
 			log.With("objectID", sb.Id(), "relationKey", key).Debugf("formula error: %v", err)
 		}
 	}
+}
+
+// injectFormulaValidation runs on formula property objects: it keeps the format
+// of the formula's value and its compile error, so clients can show them.
+func (sb *smartBlock) injectFormulaValidation(s *state.State) {
+	if t := sb.Type(); t != smartblock.SmartBlockTypeRelation && t != smartblock.SmartBlockTypeBundledRelation {
+		return
+	}
+	details := s.CombinedDetails()
+	if model.RelationFormat(details.GetInt64(bundle.RelationKeyRelationFormat)) != model.RelationFormat_formula {
+		return
+	}
+	key := domain.RelationKey(details.GetString(bundle.RelationKeyRelationKey))
+	text := details.GetString(bundle.RelationKeyRelationFormula)
+	format, err := formula.Validate(sb.spaceIndex, key, text)
+	if err != nil {
+		s.SetLocalDetail(bundle.RelationKeyRelationFormulaError, domain.String(err.Error()))
+		s.RemoveLocalDetail(bundle.RelationKeyRelationFormulaResultFormat)
+		return
+	}
+	s.SetLocalDetail(bundle.RelationKeyRelationFormulaError, domain.String(""))
+	s.SetLocalDetail(bundle.RelationKeyRelationFormulaResultFormat, domain.Int64(int64(format)))
 }

@@ -199,3 +199,28 @@ func TestCompute(t *testing.T) {
 		assert.Contains(t, res.Errors, domain.RelationKey("b"))
 	})
 }
+
+func TestValidate(t *testing.T) {
+	t.Run("valid formula returns its result format", func(t *testing.T) {
+		// given
+		fx := newComputeFixture(t)
+
+		// when
+		format, err := Validate(fx.store.SpaceIndex(testSpaceId), "newOne", `prop("total") > 1`)
+
+		// then
+		require.NoError(t, err)
+		assert.Equal(t, model.RelationFormat_checkbox, format)
+	})
+
+	t.Run("formula that reads itself", func(t *testing.T) {
+		// given
+		fx := newComputeFixture(t)
+
+		// when
+		_, err := Validate(fx.store.SpaceIndex(testSpaceId), "total", `prop("total") + 1`)
+
+		// then
+		require.EqualError(t, err, "a formula cannot read itself")
+	})
+}

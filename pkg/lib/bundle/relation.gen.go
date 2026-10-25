@@ -9,7 +9,7 @@ import (
 	"github.com/anyproto/anytype-heart/pkg/lib/pb/model"
 )
 
-const RelationChecksum = "b451ecefae21f6fd4c820207ecc8f24084ae37fd8c430437d7ce1866d2328335"
+const RelationChecksum = "a3c16a693db0a9780cf9b643788fa096cce7170f32aa08af04e5df6431a451f7"
 const (
 	RelationKeyTag                                  domain.RelationKey = "tag"
 	RelationKeyCamera                               domain.RelationKey = "camera"
@@ -33,6 +33,7 @@ const (
 	RelationKeyRelationFormat                       domain.RelationKey = "relationFormat"
 	RelationKeyRelationFormula                      domain.RelationKey = "relationFormula"
 	RelationKeyRelationFormulaResultFormat          domain.RelationKey = "relationFormulaResultFormat"
+	RelationKeyRelationFormulaError                 domain.RelationKey = "relationFormulaError"
 	RelationKeyRelationReadonlyValue                domain.RelationKey = "relationReadonlyValue"
 	RelationKeyIconImage                            domain.RelationKey = "iconImage"
 	RelationKeyIngredients                          domain.RelationKey = "ingredients"
@@ -2041,6 +2042,20 @@ var (
 			MaxCount:         1,
 			Name:             "Formula",
 			ReadOnly:         false,
+			ReadOnlyRelation: true,
+			Scope:            model.Relation_type,
+		},
+		RelationKeyRelationFormulaError: {
+
+			DataSource:       model.Relation_details,
+			Description:      "Why the formula of a formula property does not compile, empty when it does",
+			Format:           model.RelationFormat_longtext,
+			Hidden:           true,
+			Id:               "_brrelationFormulaError",
+			Key:              "relationFormulaError",
+			MaxCount:         1,
+			Name:             "Formula error",
+			ReadOnly:         true,
 			ReadOnlyRelation: true,
 			Scope:            model.Relation_type,
 		},

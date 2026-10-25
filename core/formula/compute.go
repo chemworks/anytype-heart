@@ -395,3 +395,22 @@ func (s *detailsSource) optionNames(ids []string) []string {
 	}
 	return names
 }
+
+// Validate compiles the formula of a formula property against the current
+// properties of the space and returns the format of its value.
+func Validate(store Store, key domain.RelationKey, text string) (model.RelationFormat, error) {
+	sf, err := loadSpace(store)
+	if err != nil {
+		return 0, err
+	}
+	f, err := Compile(text, sf.schema)
+	if err != nil {
+		return 0, err
+	}
+	for _, dep := range f.deps {
+		if dep.Key == key {
+			return 0, &Error{Message: "a formula cannot read itself"}
+		}
+	}
+	return f.ResultFormat(), nil
+}

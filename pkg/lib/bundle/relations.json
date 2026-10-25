@@ -228,6 +228,16 @@
     "source": "details"
   },
   {
+    "description": "Why the formula of a formula property does not compile, empty when it does",
+    "format": "longtext",
+    "hidden": true,
+    "key": "relationFormulaError",
+    "maxCount": 1,
+    "name": "Formula error",
+    "readonly": true,
+    "source": "details"
+  },
+  {
     "description": "Indicates whether the relation value is readonly",
     "format": "checkbox",
     "hidden": true,
